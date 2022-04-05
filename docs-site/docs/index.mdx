@@ -1,0 +1,117 @@
+---
+sidebar_position: 1
+---
+
+# Realm Node.js SDK
+
+The MongoDB Realm Node.js SDK allows you to use Realm Database and
+backend Realm apps from Node.js applications written in JavaScript
+or TypeScript.
+
+## Define Object Schema
+
+Define your object schema by creating an object or a class.
+
+```js
+import Realm from "realm";
+
+const Dog = {
+  name: "Dog",
+  properties: {
+    name: "string",
+    age: "int",
+    type: "string",
+  },
+};
+// open a local realm with the 'Dog' schema
+const config = {
+  schema: [Dog],
+};
+```
+
+## Query Realm Database
+
+Query for stored objects:
+
+```js
+// retrieve the set of Cat objects
+const dogs = realm.objects("Cat");
+console.log(`There are ${dogs.length} dogs`);
+// filter for dogs that are older than 7
+const dogsOlderThan7 = dogs.filtered("age > 7");
+console.log(`There are ${dogsOlderThan7.length} dogs older than 7 years old`);
+// filter for Golden Retrievers
+const goldenRetrievers = dogs.filtered("type == 'Golden Retriever'");
+console.log(`There are ${goldenRetrievers.length} Golden Retriever`);
+```
+
+## Update Live Objects
+
+Update objects in Realm Database by updating field values on an instance of the object within a transaction:
+
+```js
+// find a dog named "Jasper"
+const jasper = cats.filtered("name == 'Jasper'");
+// update the Dog in a write transaction
+realm.write(() => {
+  // update Jasper's age to 5 years old
+  jasper.age = 6;
+}); // when the transaction completes, the dog's age is updated in the database
+console.log(`Jasper the dog is ${jasper.age} years old`);
+```
+
+## Watch for Object Updates
+
+Receive object updates and notifications automatically when objects stored in Realm Database change:
+
+```js
+// insert a Dog into the database
+let Maggie;
+realm.write(() => {
+  maggie = realm.create("Dog", {
+    name: "Maggie",
+    age: 10,
+    type: "Collie",
+  });
+});
+// create a listener that logs new changes to the Dog
+maggie.addListener((obj, changes) => {
+  changes.changedProperties.forEach((changedProperty) => {
+    console.log(
+      `${obj.name}'s ${changedProperty} was altered to be ${obj[changedProperty]}`
+    ); // This should log "Maggie's age was altered to be 15"
+  });
+});
+// update the Dog
+realm.write(() => {
+  maggie.age = 15;
+});
+```
+
+## Always Access the Latest Data
+
+Live objects keep all instances of an object up to date at all times:
+
+```js
+// always access the latest data
+const realmInstanceA = await Realm.open({
+  schema: [Dog],
+});
+const realmInstanceB = await Realm.open({
+  schema: [Dog],
+});
+// get a reference to a single Dog object
+// stored in the database from each realm instance
+const goldenRetrieverDogFromRealmInstanceA = realm
+  .objects("Dog")
+  .filtered("type = 'Golden Retriever'")[0];
+const goldenRetrieverDogFromRealmInstanceB = realm
+  .objects("Dog")
+  .filtered("type = 'Golden Retriever'")[0];
+// update Dog A's name
+realm.write(() => {
+  goldenRetrieverDogFromRealmInstanceA.name = "Troy";
+});
+// Dog B instance automatically updates with the new name
+expect(goldenRetrieverDogFromRealmInstanceB.name).toBe("Air Bud");
+```
